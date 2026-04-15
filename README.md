@@ -14,7 +14,6 @@ git clone https://github.com/escritor2/nome-do-projeto.git
 cd nome-do-projeto
 
 # Abra o projeto
-# (adicione os passos específicos aqui)
 ```
 
 ---
