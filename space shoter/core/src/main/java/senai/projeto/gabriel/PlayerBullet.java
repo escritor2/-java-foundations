@@ -3,45 +3,46 @@ package senai.projeto.gabriel;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Rectangle;
-import senai.projeto.gabriel.Player;
+import com.badlogic.gdx.utils.Pool;
 
-public class PlayerBullet {
-    private Sprite sprite;
+public class PlayerBullet implements Pool.Poolable {
+    private final Sprite sprite;
     private int durability;
-    private String type;
+    private Enums.BulletType type;
     private float lifeTime;
 
-
-    public PlayerBullet(Texture texture, String type, float x, float y, int durability, float lifeTime) {
+    public PlayerBullet(Texture texture) {
         this.sprite = new Sprite(texture);
+    }
+
+    public void init(Enums.BulletType type, float x, float y) {
         this.type = type;
-        this.lifeTime = lifeTime;
+        this.lifeTime = (type == Enums.BulletType.SPECIAL) ? 3f : 10f;
+        this.durability = (type == Enums.BulletType.SPECIAL) ? 100 : 2;
+
         int width, height;
-        if(this.type.equals("especial")){
+        if (this.type == Enums.BulletType.SPECIAL) {
             width = 2;
             height = 10000;
-        }else{
+        } else {
             width = 10;
             height = 30;
         }
         this.sprite.setSize(width, height);
         this.sprite.setPosition(x, y);
-        this.durability = durability;
-
-
     }
 
     public void update(float deltaTime, float speed, Player player) {
-        sprite.translateY(speed * deltaTime);
-        if(this.type.equals("especial"))this.lifeTime -= deltaTime;
-        if(this.type.equals("especial")){
+        if (this.type == Enums.BulletType.SPECIAL) {
+            this.lifeTime -= deltaTime;
             sprite.setPosition(player.getSprite().getX() + player.getSprite().getWidth() / 2, player.getSprite().getY() + 15);
+        } else {
+            sprite.translateY(speed * deltaTime);
         }
     }
 
-    public float getLifeTime() {return this.lifeTime;}
-    public boolean isOffScreen(float screenHeight) {
-        return sprite.getY() > screenHeight;
+    public boolean isOffScreen() {
+        return sprite.getY() > Constants.WORLD_HEIGHT;
     }
 
     public boolean hitEnemy() {
@@ -49,11 +50,14 @@ public class PlayerBullet {
         return durability <= 0;
     }
 
-    public String getType() {
-        return type;
+    @Override
+    public void reset() {
+        this.durability = 0;
+        this.lifeTime = 0;
     }
 
-    // Getters
+    public Enums.BulletType getType() { return type; }
+    public float getLifeTime() { return lifeTime; }
     public Sprite getSprite() { return sprite; }
     public Rectangle getBounds() { return sprite.getBoundingRectangle(); }
 }

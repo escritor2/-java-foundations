@@ -1,18 +1,20 @@
 package senai.projeto.gabriel;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 
 public class AudioManager {
-    private Music music;
-    private Sound shootSound;
+    private final Music music;
+    private final Sound shootSound;
 
-    public void load() {
-        shootSound = Gdx.audio.newSound(Gdx.files.internal("tiro.mp3"));
-        music = Gdx.audio.newMusic(Gdx.files.internal("music.mp3"));
-        music.setLooping(true);
-        music.setVolume(0.5f);
+    public AudioManager(Assets assets) {
+        this.shootSound = assets.get(Assets.SHOOT_SOUND, Sound.class);
+        this.music = assets.get(Assets.MUSIC, Music.class);
+        
+        if (music != null) {
+            music.setLooping(true);
+            music.setVolume(0.5f);
+        }
     }
 
     public void playShoot() {
@@ -30,7 +32,6 @@ public class AudioManager {
     }
 
     public void dispose() {
-        if (shootSound != null) shootSound.dispose();
-        if (music != null) music.dispose();
+        // Assets are managed by the main Assets class, so we don't dispose them here
     }
 }

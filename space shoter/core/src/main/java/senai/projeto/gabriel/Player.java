@@ -6,29 +6,36 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 
 public class Player {
-    private Sprite sprite;
-    private int lives = 3;
-    private float invulnerabilityTimer = 0f;
-    private boolean gameOver = false;
-    private boolean canAttack = true;
+    private final Sprite sprite;
+    private int lives;
+    private float invulnerabilityTimer;
+    private boolean gameOver;
+    private boolean canAttack;
 
-    // NOVO: Variáveis para o Power-up de Tiro Triplo
-    private boolean tripleShotActive = false;
-    private float tripleShotTimer = 0f;
-    private final float MAX_TRIPLE_SHOT_TIME = 8.0f; // Duração de 8 segundos
+    private boolean tripleShotActive;
+    private float tripleShotTimer;
+    
+    // Phase 2: Progression & Defense
+    private int weaponLevel;
+    private int shieldHealth;
 
     public Player(Texture texture, float x, float y) {
         this.sprite = new Sprite(texture);
-        this.sprite.setSize(60, 60);
+        this.sprite.setSize(Constants.PLAYER_SIZE, Constants.PLAYER_SIZE);
         this.sprite.setPosition(x, y);
+        this.lives = Constants.PLAYER_MAX_LIVES;
+        this.invulnerabilityTimer = 0;
+        this.gameOver = false;
+        this.canAttack = true;
+        this.weaponLevel = 1;
+        this.shieldHealth = 0;
     }
 
-    public void update(float deltaTime, float worldWidth, float maxHeight) {
+    public void update(float deltaTime) {
         if (invulnerabilityTimer > 0) {
             invulnerabilityTimer -= deltaTime;
         }
 
-        // NOVO: Decrementa o timer do tiro triplo
         if (tripleShotActive) {
             tripleShotTimer -= deltaTime;
             if (tripleShotTimer <= 0) {
@@ -36,48 +43,73 @@ public class Player {
             }
         }
 
-        sprite.setX(MathUtils.clamp(sprite.getX(), 0, worldWidth - sprite.getWidth()));
-        sprite.setY(MathUtils.clamp(sprite.getY(), 0, maxHeight));
+        sprite.setX(MathUtils.clamp(sprite.getX(), 0, Constants.WORLD_WIDTH - sprite.getWidth()));
+        sprite.setY(MathUtils.clamp(sprite.getY(), 0, Constants.PLAYER_MAX_Y));
     }
 
-    public void move(float deltaX, float deltaY, float worldWidth, float maxHeight) {
+    public void move(float deltaX, float deltaY) {
         sprite.translateX(deltaX);
         sprite.translateY(deltaY);
-        sprite.setX(MathUtils.clamp(sprite.getX(), 0, worldWidth - sprite.getWidth()));
-        sprite.setY(MathUtils.clamp(sprite.getY(), 0, maxHeight));
+        updateBounds();
     }
 
-    public void setPosition(float x, float y, float worldWidth) {
-        sprite.setX(MathUtils.clamp(x, 0, worldWidth - sprite.getWidth()));
-        sprite.setY(y);
+    private void updateBounds() {
+        sprite.setX(MathUtils.clamp(sprite.getX(), 0, Constants.WORLD_WIDTH - sprite.getWidth()));
+        sprite.setY(MathUtils.clamp(sprite.getY(), 0, Constants.PLAYER_MAX_Y));
     }
-    public void setCanAttack(boolean canAttack){
-        this.canAttack = canAttack;
+
+    public void setPosition(float x, float y) {
+        sprite.setX(x);
+        sprite.setY(y);
+        updateBounds();
     }
 
     public void takeHit() {
+        if (isInvulnerable()) return;
+        
+        if (shieldHealth > 0) {
+            shieldHealth--;
+            invulnerabilityTimer = 0.5f; // Short invulnerability on shield hit
+            return;
+        }
+
         lives--;
+        
+        // Classic arcade penalty: decrease weapon level on damage
+        if (weaponLevel > 1) weaponLevel--;
+        
         if (lives <= 0) {
             gameOver = true;
         } else {
-            invulnerabilityTimer = 1.5f;
+            invulnerabilityTimer = Constants.PLAYER_INVULNERABILITY_TIME;
         }
     }
 
-    // NOVO: Método para ativar o Power-up
     public void activateTripleShot() {
         tripleShotActive = true;
-        tripleShotTimer = MAX_TRIPLE_SHOT_TIME;
+        tripleShotTimer = Constants.TRIPLE_SHOT_DURATION;
+    }
+    
+    public void upgradeWeapon() {
+        if (weaponLevel < 4) weaponLevel++;
+    }
+    
+    public void activateShield() {
+        shieldHealth = 3; // 3 hits shield
     }
 
-    // NOVO: Getter
-    public boolean isTripleShotActive() {
-        return tripleShotActive;
+    public void setCanAttack(boolean canAttack) {
+        this.canAttack = canAttack;
     }
-    public boolean canAttack() {return canAttack;}
+
+    public boolean isTripleShotActive() { return tripleShotActive; }
+    public boolean canAttack() { return canAttack; }
     public Sprite getSprite() { return sprite; }
     public Rectangle getBounds() { return sprite.getBoundingRectangle(); }
     public int getLives() { return lives; }
+    public int getWeaponLevel() { return weaponLevel; }
+    public int getShieldHealth() { return shieldHealth; }
+    public boolean isShieldActive() { return shieldHealth > 0; }
     public boolean isGameOver() { return gameOver; }
     public boolean isInvulnerable() { return invulnerabilityTimer > 0; }
     public boolean shouldBlink() {
